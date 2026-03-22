@@ -6,20 +6,9 @@
 	import type { Snippet } from 'svelte';
 	import { getAvatarContext } from './Avatar.svelte';
 	import Facehash from '../Facehash.svelte';
-	import type { Intensity3D, Variant } from '../Facehash.svelte';
+	import type { FacehashProps } from '../Facehash.svelte';
 
 	const WHITESPACE_REGEX = /\s+/;
-
-	interface FacehashProps {
-		size?: number | string;
-		variant?: Variant;
-		intensity3d?: Intensity3D;
-		interactive?: boolean;
-		showInitial?: boolean;
-		colors?: string[];
-		colorClasses?: string[];
-		gradientOverlayClass?: string;
-	}
 
 	interface Props extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
 		/**
@@ -48,7 +37,7 @@
 		/**
 		 * Props to pass to the Facehash component.
 		 */
-		facehashProps?: FacehashProps;
+		facehashProps?: Partial<Omit<FacehashProps, 'name'>>;
 	}
 
 	let {

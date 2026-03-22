@@ -74,6 +74,30 @@
 		 * Only used when variant="gradient".
 		 */
 		gradientOverlayClass?: string;
+
+		/**
+		 * Enable periodic blink animation on the face (eyes squash vertically).
+		 * @default false
+		 */
+		blink?: boolean;
+
+		/**
+		 * Time between the start of successive blinks, in milliseconds.
+		 * @default 4000
+		 */
+		blinkIntervalMs?: number;
+
+		/**
+		 * How long each blink stays “closed”, in milliseconds.
+		 * Capped below `blinkIntervalMs` so blinks do not overlap.
+		 * @default 150
+		 */
+		blinkDurationMs?: number;
+
+		/**
+		 * Delay before the first blink. When omitted, a value derived from `name` is used so multiple faces do not blink in sync.
+		 */
+		blinkInitialDelayMs?: number;
 	}
 </script>
 
@@ -81,6 +105,9 @@
 	import { FACES } from './faces/index.js';
 	import { stringHash } from './core/hash.ts';
 	import { DEFAULT_COLORS } from './core/colors.ts';
+
+	const BLINK_SCALE_CLOSED = 0.25;
+	const BLINK_TRANSITION = 'transform 90ms cubic-bezier(0.4, 0, 0.2, 1)';
 
 	const INTENSITY_PRESETS = {
 		none: {
@@ -128,12 +155,81 @@
 		colors,
 		colorClasses,
 		gradientOverlayClass,
+		blink = false,
+		blinkIntervalMs = 4000,
+		blinkDurationMs = 150,
+		blinkInitialDelayMs,
 		class: className,
 		style,
 		...restProps
 	}: FacehashProps = $props();
 
 	let isHovered = $state(false);
+	let isBlinking = $state(false);
+
+	let effectiveBlinkDurationMs = $derived.by(() => {
+		const interval = Math.max(2, blinkIntervalMs);
+		const capped = Math.min(blinkDurationMs, interval - 1);
+		return Math.max(1, capped);
+	});
+
+	let blinkStaggerMs = $derived.by(() => {
+		const interval = Math.max(2, blinkIntervalMs);
+		if (blinkInitialDelayMs !== undefined) {
+			return Math.max(0, blinkInitialDelayMs);
+		}
+		return stringHash(name) % interval;
+	});
+
+	$effect(() => {
+		if (!blink || typeof window === 'undefined') {
+			isBlinking = false;
+			return;
+		}
+
+		const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+		if (mq.matches) {
+			isBlinking = false;
+			return;
+		}
+
+		const intervalMs = Math.max(2, blinkIntervalMs);
+		const durationMs = effectiveBlinkDurationMs;
+		const stagger = blinkStaggerMs;
+
+		let intervalId: number | undefined;
+		let initialTimeoutId: number | undefined;
+		let closeTimeoutId: number | undefined;
+
+		function endBlink() {
+			isBlinking = false;
+			closeTimeoutId = undefined;
+		}
+
+		function startBlink() {
+			if (closeTimeoutId !== undefined) {
+				clearTimeout(closeTimeoutId);
+			}
+			isBlinking = true;
+			closeTimeoutId = window.setTimeout(endBlink, durationMs);
+		}
+
+		initialTimeoutId = window.setTimeout(() => {
+			startBlink();
+			intervalId = window.setInterval(startBlink, intervalMs);
+		}, stagger);
+
+		return () => {
+			if (initialTimeoutId !== undefined) clearTimeout(initialTimeoutId);
+			if (intervalId !== undefined) clearInterval(intervalId);
+			if (closeTimeoutId !== undefined) clearTimeout(closeTimeoutId);
+			isBlinking = false;
+		};
+	});
+
+	let blinkWrapTransform = $derived(
+		blink && isBlinking ? `scaleY(${BLINK_SCALE_CLOSED})` : 'scaleY(1)'
+	);
 
 	let resolvedColors = $derived(colors && colors.length > 0 ? colors : [...DEFAULT_COLORS]);
 
@@ -237,8 +333,18 @@
 		style:transition={interactive ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : undefined}
 		style:color="#000000"
 	>
-		<!-- Face SVG -->
-		<faceData.FaceComponent style="width: 60%; height: auto; max-width: 90%; max-height: 40%;" />
+		<!-- Face SVG (blink wraps only the eyes graphic) -->
+		<span
+			data-facehash-blink-wrap=""
+			style:display="flex"
+			style:align-items="center"
+			style:justify-content="center"
+			style:transform-origin="center"
+			style:transform={blink ? blinkWrapTransform : undefined}
+			style:transition={blink ? BLINK_TRANSITION : undefined}
+		>
+			<faceData.FaceComponent style="width: 60%; height: auto; max-width: 90%; max-height: 40%;" />
+		</span>
 
 		<!-- Initial letter -->
 		{#if showInitial}
@@ -252,6 +358,15 @@
 			>
 				{initial}
 			</span>
-		{/if}
-	</div>
+	{/if}
+</div>
+
+<style>
+	@media (prefers-reduced-motion: reduce) {
+		[data-facehash-blink-wrap] {
+			transform: none !important;
+			transition: none !important;
+		}
+	}
+</style>
 </div>

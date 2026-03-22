@@ -74,6 +74,17 @@
 	</section>
 
 	<section>
+		<h2>Blinking</h2>
+		<p>Periodic blink uses a short vertical squash on the face graphic.</p>
+		<div class="row">
+			<div class="demo">
+				<Facehash name="blink-demo" size={100} {colors} blink blinkIntervalMs={3000} blinkDurationMs={150} />
+				<span>blink</span>
+			</div>
+		</div>
+	</section>
+
+	<section>
 		<h2>Avatar with Image Fallback</h2>
 		<p>When image fails to load, Facehash shows as fallback.</p>
 		<div class="row">
