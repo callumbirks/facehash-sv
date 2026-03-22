@@ -106,7 +106,7 @@
 	import { stringHash } from './core/hash.ts';
 	import { DEFAULT_COLORS } from './core/colors.ts';
 
-	const BLINK_SCALE_CLOSED = 0.25;
+	const BLINK_SCALE_CLOSED = 0.3;
 	const BLINK_TRANSITION = 'transform 90ms cubic-bezier(0.4, 0, 0.2, 1)';
 
 	const INTENSITY_PRESETS = {
@@ -227,9 +227,14 @@
 		};
 	});
 
-	let blinkWrapTransform = $derived(
-		blink && isBlinking ? `scaleY(${BLINK_SCALE_CLOSED})` : 'scaleY(1)'
-	);
+	// translate3d(0,0,0) keeps compositing stable under preserve-3d + parent translateZ (avoids horizontal drift when looking straight).
+	let blinkWrapTransform = $derived.by(() => {
+		if (!blink) {
+			return undefined;
+		}
+		const scale = isBlinking ? BLINK_SCALE_CLOSED : 1;
+		return `translate3d(0, 0, 0) scaleY(${scale})`;
+	});
 
 	let resolvedColors = $derived(colors && colors.length > 0 ? colors : [...DEFAULT_COLORS]);
 
@@ -337,13 +342,19 @@
 		<span
 			data-facehash-blink-wrap=""
 			style:display="flex"
+			style:width="100%"
+			style:box-sizing="border-box"
 			style:align-items="center"
 			style:justify-content="center"
-			style:transform-origin="center"
-			style:transform={blink ? blinkWrapTransform : undefined}
+			style:transform-origin="center center"
+			style:transform-style="preserve-3d"
+			style:backface-visibility="hidden"
+			style:transform={blinkWrapTransform}
 			style:transition={blink ? BLINK_TRANSITION : undefined}
 		>
-			<faceData.FaceComponent style="width: 60%; height: auto; max-width: 90%; max-height: 40%;" />
+			<faceData.FaceComponent
+				style="display: block; width: 60%; height: auto; max-width: 90%; max-height: 40%;"
+			/>
 		</span>
 
 		<!-- Initial letter -->
