@@ -43,6 +43,13 @@
 		interactive?: boolean;
 
 		/**
+		 * Force the face to look straight.
+		 * When true, face "looks straight" regardless of hover state.
+		 * @default false
+		 */
+		forceLookStraight?: boolean;
+
+		/**
 		 * Show first letter of name below the face.
 		 * @default true
 		 */
@@ -116,6 +123,7 @@
 		variant = 'gradient',
 		intensity3d = 'dramatic',
 		interactive = true,
+		forceLookStraight = false,
 		showInitial = true,
 		colors,
 		colorClasses,
@@ -152,8 +160,8 @@
 			return undefined;
 		}
 
-		const rotateX = isHovered && interactive ? 0 : faceData.rotation.x * preset.rotateRange;
-		const rotateY = isHovered && interactive ? 0 : faceData.rotation.y * preset.rotateRange;
+		const rotateX = forceLookStraight || (isHovered && interactive) ? 0 : faceData.rotation.x * preset.rotateRange;
+		const rotateY = forceLookStraight || (isHovered && interactive) ? 0 : faceData.rotation.y * preset.rotateRange;
 
 		return `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(${preset.translateZ}px)`;
 	});
