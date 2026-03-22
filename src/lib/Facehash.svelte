@@ -341,11 +341,9 @@
 		<!-- Face SVG (blink wraps only the eyes graphic) -->
 		<span
 			data-facehash-blink-wrap=""
-			style:display="flex"
-			style:width="100%"
-			style:box-sizing="border-box"
-			style:align-items="center"
-			style:justify-content="center"
+			style:display="block"
+			style:width="60%"
+			style:max-width="90%"
 			style:transform-origin="center center"
 			style:transform-style="preserve-3d"
 			style:backface-visibility="hidden"
@@ -353,7 +351,7 @@
 			style:transition={blink ? BLINK_TRANSITION : undefined}
 		>
 			<faceData.FaceComponent
-				style="display: block; width: 60%; height: auto; max-width: 90%; max-height: 40%;"
+				style="display: block; width: 100%; height: auto;"
 			/>
 		</span>
 
